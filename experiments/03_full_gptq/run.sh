@@ -7,7 +7,8 @@ NGPU=${NGPU:-8}
 DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$DIR/../.." && pwd)"
 
-# === TRAINING ===
+# === TRAINING (outputs go to this experiment's folder) ===
+cd "$DIR"
 RUN_ID="${EXP_NAME}_seed${SEED}" \
 DATA_PATH="$ROOT/data/datasets/fineweb10B_sp1024" \
 TOKENIZER_PATH="$ROOT/data/tokenizers/fineweb_1024_bpe.model" \
@@ -21,7 +22,7 @@ torchrun --standalone --nproc_per_node="$NGPU" "$DIR/train_gpt.py"
 
 # === POST-TRAINING ===
 python "$ROOT/experiments/shared/metrics.py" \
-  --log "logs/${EXP_NAME}_seed${SEED}.txt" \
+  --log "$DIR/logs/${EXP_NAME}_seed${SEED}.txt" \
   --experiment "$EXP_NAME" --seed "$SEED" \
   --output "$ROOT/experiments/metrics/" \
   --techniques full_gptq hessian_quant
@@ -29,13 +30,13 @@ python "$ROOT/experiments/shared/metrics.py" \
 [ "${WANDB_ENABLED:-0}" = "1" ] && \
   python "$ROOT/experiments/shared/wandb_report.py" \
     --metrics "$(ls -t "$ROOT/experiments/metrics/${EXP_NAME}_seed${SEED}"*.json | head -1)" \
-    --artifact final_model.*.ptz
+    --artifact "$DIR"/final_model.*.ptz
 
 [ "${HF_UPLOAD:-0}" = "1" ] && \
   python "$ROOT/experiments/shared/hf_upload.py" \
-    --model final_model.*.ptz \
+    --model "$DIR"/final_model.*.ptz \
     --script "$DIR/train_gpt.py" \
     --metrics "$(ls -t "$ROOT/experiments/metrics/${EXP_NAME}_seed${SEED}"*.json | head -1)" \
-    --repo "Gayanukaa/parameter-golf-${EXP_NAME}"
+    --repo "Gayanukaa"
 
 echo "Done: $EXP_NAME seed=$SEED"

@@ -12,7 +12,8 @@ def main():
     parser.add_argument("--model", required=True, help="Path to compressed model (.ptz)")
     parser.add_argument("--script", required=True, help="Path to train_gpt.py")
     parser.add_argument("--metrics", required=True, help="Path to metrics JSON")
-    parser.add_argument("--repo", required=True, help="HF repo name (e.g. Gayanukaa/parameter-golf-01)")
+    parser.add_argument("--repo", required=True, help="HF repo owner (e.g. Gayanukaa)")
+    parser.add_argument("--run-name", default=None, help="Run name (auto-generated if not set)")
     parser.add_argument("--token", default=None, help="HF token (or set HUGGINGFACE_TOKEN env)")
     args = parser.parse_args()
 
@@ -29,9 +30,21 @@ def main():
 
     api = HfApi(token=token)
 
+    # Build repo name with naming convention
+    from datetime import datetime
+    metrics = json.loads(Path(args.metrics).read_text())
+    exp = metrics.get("experiment", "unknown")
+    seed = metrics.get("seed", 0)
+    if args.run_name:
+        repo_name = args.run_name
+    else:
+        ts = datetime.now().strftime("%Y%m%d-%H%M%S")
+        repo_name = f"parameter-golf-{exp}-seed{seed}-{ts}"
+    repo_id = f"{args.repo}/{repo_name}"
+
     # Create repo if needed
     try:
-        api.create_repo(args.repo, exist_ok=True, private=False)
+        api.create_repo(repo_id, exist_ok=True, private=False)
     except Exception as e:
         print(f"Repo creation: {e}")
 
@@ -62,16 +75,15 @@ def main():
             api.upload_file(
                 path_or_fileobj=str(local),
                 path_in_repo=remote,
-                repo_id=args.repo,
+                repo_id=repo_id,
             )
             print(f"Uploaded: {remote}")
 
     # Create model card
-    metrics = json.loads(metrics_path.read_text())
     card = f"""---
 tags: [parameter-golf, language-model, compression]
 ---
-# {args.repo.split('/')[-1]}
+# {repo_name}
 
 Experiment: **{metrics.get('experiment', 'unknown')}** | Seed: {metrics.get('seed', 'N/A')}
 
@@ -94,7 +106,7 @@ Download the zip bundle for all files.
     )
     readme_path.unlink()
 
-    print(f"Done: https://huggingface.co/{args.repo}")
+    print(f"Done: https://huggingface.co/{repo_id}")
 
 
 if __name__ == "__main__":

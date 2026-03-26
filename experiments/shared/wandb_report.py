@@ -19,10 +19,13 @@ def main():
         print("wandb not installed, skipping. pip install wandb")
         return
 
+    from datetime import datetime
+
     metrics = json.loads(Path(args.metrics).read_text())
     exp = metrics.get("experiment", "unknown")
     seed = metrics.get("seed", 0)
-    run_name = f"{exp}_seed{seed}"
+    ts = datetime.now().strftime("%Y%m%d-%H%M%S")
+    run_name = f"parameter-golf-{exp}-seed{seed}-{ts}"
 
     config = metrics.get("hyperparameters", {})
     config["experiment"] = exp

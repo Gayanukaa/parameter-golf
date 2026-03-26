@@ -10,7 +10,8 @@ ROOT="$(cd "$DIR/../.." && pwd)"
 # Schedule variant: cosine (default), linear, or current baseline
 LR_SCHEDULE=${LR_SCHEDULE:-cosine}
 
-# === TRAINING ===
+# === TRAINING (outputs go to this experiment's folder) ===
+cd "$DIR"
 RUN_ID="${EXP_NAME}_${LR_SCHEDULE}_seed${SEED}" \
 DATA_PATH="$ROOT/data/datasets/fineweb10B_sp1024" \
 TOKENIZER_PATH="$ROOT/data/tokenizers/fineweb_1024_bpe.model" \
@@ -24,7 +25,7 @@ torchrun --standalone --nproc_per_node="$NGPU" "$DIR/train_gpt.py"
 
 # === POST-TRAINING ===
 python "$ROOT/experiments/shared/metrics.py" \
-  --log "logs/${EXP_NAME}_${LR_SCHEDULE}_seed${SEED}.txt" \
+  --log "$DIR/logs/${EXP_NAME}_${LR_SCHEDULE}_seed${SEED}.txt" \
   --experiment "${EXP_NAME}_${LR_SCHEDULE}" --seed "$SEED" \
   --output "$ROOT/experiments/metrics/" \
   --techniques "${LR_SCHEDULE}_schedule" longer_warmdown noisy_qat
@@ -32,13 +33,13 @@ python "$ROOT/experiments/shared/metrics.py" \
 [ "${WANDB_ENABLED:-0}" = "1" ] && \
   python "$ROOT/experiments/shared/wandb_report.py" \
     --metrics "$(ls -t "$ROOT/experiments/metrics/${EXP_NAME}_${LR_SCHEDULE}_seed${SEED}"*.json | head -1)" \
-    --artifact final_model.*.ptz
+    --artifact "$DIR"/final_model.*.ptz
 
 [ "${HF_UPLOAD:-0}" = "1" ] && \
   python "$ROOT/experiments/shared/hf_upload.py" \
-    --model final_model.*.ptz \
+    --model "$DIR"/final_model.*.ptz \
     --script "$DIR/train_gpt.py" \
     --metrics "$(ls -t "$ROOT/experiments/metrics/${EXP_NAME}_${LR_SCHEDULE}_seed${SEED}"*.json | head -1)" \
-    --repo "Gayanukaa/parameter-golf-${EXP_NAME}"
+    --repo "Gayanukaa"
 
 echo "Done: $EXP_NAME schedule=$LR_SCHEDULE seed=$SEED"
