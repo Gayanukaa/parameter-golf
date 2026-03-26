@@ -25,7 +25,7 @@ torchrun --standalone --nproc_per_node="$NGPU" "$DIR/train_gpt.py"
 
 # === POST-TRAINING ===
 python "$ROOT/experiments/shared/metrics.py" \
-  --log "$DIR/logs/${EXP_NAME}_${LR_SCHEDULE}_seed${SEED}.txt" \
+  --log "$DIR/logs/${EXP_NAME}_${LR_SCHEDULE}_seed${SEED}.log" \
   --experiment "${EXP_NAME}_${LR_SCHEDULE}" --seed "$SEED" \
   --output "$ROOT/experiments/metrics/" \
   --techniques "${LR_SCHEDULE}_schedule" longer_warmdown noisy_qat

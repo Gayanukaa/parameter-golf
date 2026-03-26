@@ -1083,7 +1083,7 @@ def main() -> None:
     torch.backends.cudnn.allow_tf32 = True
 
     os.makedirs("logs/cuda/", exist_ok=True)
-    logfile = f"logs/cuda/{args.run_id}.txt" if master_process else None
+    logfile = f"logs/cuda/{args.run_id}.log" if master_process else None
     if master_process:
         print(logfile)
 

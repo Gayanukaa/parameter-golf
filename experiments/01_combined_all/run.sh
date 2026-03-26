@@ -41,7 +41,7 @@ torchrun --standalone --nproc_per_node="$NGPU" "$DIR/train_gpt.py"
 
 # === POST-TRAINING ===
 python "$ROOT/experiments/shared/metrics.py" \
-  --log "$DIR/logs/${EXP_NAME}_seed${SEED}.txt" \
+  --log "$DIR/logs/${EXP_NAME}_seed${SEED}.log" \
   --experiment "$EXP_NAME" --seed "$SEED" \
   --output "$ROOT/experiments/metrics/" \
   --techniques leaky_relu_sq ttt parallel_muon gptq_lite ema xsa partial_rope ln_scale
