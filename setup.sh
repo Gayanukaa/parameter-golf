@@ -23,9 +23,10 @@ echo "[2/2] FineWeb datasets..."
 echo "  Downloading sp1024..."
 cd "$ROOT" && python3 data/cached_challenge_fineweb.py --variant sp1024 --train-shards 80
 
-# sp8192 (used by experiments 02, 04)
-echo "  Downloading sp8192..."
-cd "$ROOT" && python3 data/cached_challenge_fineweb.py --variant sp8192 --train-shards 80
+# sp8192 (used by experiments 02, 04) — not available in upstream yet
+echo "  Downloading sp8192 (optional)..."
+cd "$ROOT" && python3 data/cached_challenge_fineweb.py --variant sp8192 --train-shards 80 2>/dev/null || \
+  echo "  sp8192 not available — experiments 02, 04 will be skipped."
 
 echo "  Done."
 
@@ -63,7 +64,10 @@ except ImportError:
 for variant in ["sp1024", "sp8192"]:
     train = sorted(glob.glob(f"./data/datasets/fineweb10B_{variant}/fineweb_train_*.bin"))
     val = sorted(glob.glob(f"./data/datasets/fineweb10B_{variant}/fineweb_val_*.bin"))
-    print(f"{variant:12s} : {len(train)} train, {len(val)} val shards")
+    if train or val:
+        print(f"{variant:12s} : {len(train)} train, {len(val)} val shards")
+    else:
+        print(f"{variant:12s} : not available")
 PYEOF
 
 echo ""
