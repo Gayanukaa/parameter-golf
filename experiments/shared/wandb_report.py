@@ -9,8 +9,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--metrics", required=True, help="Path to metrics JSON file")
     parser.add_argument("--artifact", default=None, help="Path to model artifact (.ptz)")
-    parser.add_argument("--project", default="test")
-    parser.add_argument("--entity", default="gayanukaa")
+    parser.add_argument("--project", default="parameter-golf", help="W&B project name")
+    parser.add_argument("--entity", default="gayanuka-lab")
     args = parser.parse_args()
 
     try:

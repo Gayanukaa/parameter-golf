@@ -1642,7 +1642,7 @@ def main() -> None:
     from collections import deque
     lawa_queue: deque[dict[str, Tensor]] = deque(maxlen=args.lawa_k)
     ema_state = {name: t.detach().float().clone() for name, t in base_model.state_dict().items()}
-    ema_decay = 0.997
+    ema_decay = float(os.environ.get("EMA_DECAY", "0.997"))
     training_time_ms = 0.0
     stop_after_step: int | None = None
     torch.cuda.synchronize()

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-EXP_NAME="04_ternary_with_ttt"
+EXP_NAME="09_optimized"
 SEED=${SEED:-1337}
 NGPU=${NGPU:-8}
 DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -10,27 +10,37 @@ ROOT="$(cd "$DIR/../.." && pwd)"
 # === TRAINING (outputs go to this experiment's folder) ===
 cd "$DIR"
 RUN_ID="${EXP_NAME}_seed${SEED}" \
-DATA_PATH="$ROOT/data/datasets/fineweb10B_sp8192" \
-TOKENIZER_PATH="$ROOT/data/tokenizers/fineweb_8192_bpe.model" \
-VOCAB_SIZE=8192 \
+DATA_PATH="$ROOT/data/datasets/fineweb10B_sp1024" \
+TOKENIZER_PATH="$ROOT/data/tokenizers/fineweb_1024_bpe.model" \
+VOCAB_SIZE=1024 \
 MAX_WALLCLOCK_SECONDS=600 \
 SEED="$SEED" \
-NUM_LAYERS=10 \
-MODEL_DIM=768 \
+NUM_LAYERS=11 \
+MODEL_DIM=512 \
 NUM_HEADS=8 \
 NUM_KV_HEADS=4 \
-MLP_MULT=4 \
-EMBED_DIM=254 \
-TRAIN_SEQ_LEN=1024 \
-TRAIN_BATCH_TOKENS=524288 \
-ROPE_BASE=5000 \
-ROPE_TYPE=yarn \
-QUANT_TYPE=ternary \
+MLP_MULT=3 \
+TRAIN_SEQ_LEN=2048 \
+TRAIN_BATCH_TOKENS=786432 \
+ITERATIONS=9000 \
+WARMDOWN_ITERS=2500 \
+WARMUP_STEPS=20 \
+MATRIX_LR=0.025 \
+TIED_EMBED_LR=0.035 \
+SCALAR_LR=0.025 \
+MUON_MOMENTUM=0.99 \
+MUON_BACKEND_STEPS=5 \
+GRAD_CLIP_NORM=0.3 \
+XSA_LAST_N=4 \
+ROPE_DIMS=16 \
+EMA_DECAY=0.995 \
+LATE_QAT_THRESHOLD=0.20 \
 TTT_ENABLED=1 \
 TTT_LR=0.002 \
 TTT_EPOCHS=3 \
 TTT_FREEZE_BLOCKS=0 \
-EVAL_STRIDE=16 \
+EVAL_STRIDE=64 \
+VAL_LOSS_EVERY=0 \
 torchrun --standalone --nproc_per_node="$NGPU" "$DIR/train_gpt.py"
 
 # === POST-TRAINING ===
@@ -38,7 +48,7 @@ python "$ROOT/experiments/shared/metrics.py" \
   --log "$DIR/logs/${EXP_NAME}_seed${SEED}.log" \
   --experiment "$EXP_NAME" --seed "$SEED" \
   --output "$ROOT/experiments/metrics/" \
-  --techniques ternary bitnet ttt yarn fp8
+  --techniques leaky_relu_sq ttt parallel_muon gptq_lite ema xsa partial_rope ln_scale optimized_warmdown
 
 if [ "${WANDB_ENABLED:-0}" = "1" ]; then
   python "$ROOT/experiments/shared/wandb_report.py" \
