@@ -26,16 +26,18 @@ python "$ROOT/experiments/shared/metrics.py" \
   --output "$ROOT/experiments/metrics/" \
   --techniques ssm_hybrid mamba
 
-[ "${WANDB_ENABLED:-0}" = "1" ] && \
+if [ "${WANDB_ENABLED:-0}" = "1" ]; then
   python "$ROOT/experiments/shared/wandb_report.py" \
     --metrics "$(ls -t "$ROOT/experiments/metrics/${EXP_NAME}_seed${SEED}"*.json | head -1)" \
-    --artifact "$DIR"/final_model.*.ptz
+    --artifact "$DIR"/final_model.*.ptz || echo "WARNING: wandb upload failed"
+fi
 
-[ "${HF_UPLOAD:-0}" = "1" ] && \
+if [ "${HF_UPLOAD:-0}" = "1" ]; then
   python "$ROOT/experiments/shared/hf_upload.py" \
     --model "$DIR"/final_model.*.ptz \
     --script "$DIR/train_gpt.py" \
     --metrics "$(ls -t "$ROOT/experiments/metrics/${EXP_NAME}_seed${SEED}"*.json | head -1)" \
-    --repo "Gayanukaa"
+    --repo "Gayanukaa" || echo "WARNING: HF upload failed"
+fi
 
 echo "Done: $EXP_NAME seed=$SEED"

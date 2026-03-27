@@ -10,7 +10,7 @@ def main():
     parser.add_argument("--metrics", required=True, help="Path to metrics JSON file")
     parser.add_argument("--artifact", default=None, help="Path to model artifact (.ptz)")
     parser.add_argument("--project", default="test")
-    parser.add_argument("--entity", default="gayanukaa-uom")
+    parser.add_argument("--entity", default="gayanukaa")
     args = parser.parse_args()
 
     try:
