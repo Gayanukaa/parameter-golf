@@ -33,7 +33,7 @@ python "$ROOT/experiments/shared/metrics.py" \
 if [ "${WANDB_ENABLED:-0}" = "1" ]; then
   python "$ROOT/experiments/shared/wandb_report.py" \
     --metrics "$(ls -t "$ROOT/experiments/metrics/${EXP_NAME}_${LR_SCHEDULE}_seed${SEED}"*.json | head -1)" \
-    --artifact "$DIR"/final_model.*.ptz || echo "WARNING: wandb upload failed"
+    --hf-repo "Gayanukaa/parameter-golf-${EXP_NAME}-seed${SEED}" || echo "WARNING: wandb upload failed"
 fi
 
 if [ "${HF_UPLOAD:-0}" = "1" ]; then

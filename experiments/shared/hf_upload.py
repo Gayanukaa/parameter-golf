@@ -35,16 +35,16 @@ def main():
     metrics = json.loads(Path(args.metrics).read_text())
     exp = metrics.get("experiment", "unknown")
     seed = metrics.get("seed", 0)
+    ts = datetime.now().strftime("%Y%m%d-%H%M%S")
     if args.run_name:
         repo_name = args.run_name
     else:
-        ts = datetime.now().strftime("%Y%m%d-%H%M%S")
-        repo_name = f"parameter-golf-{exp}-seed{seed}-{ts}"
+        repo_name = f"parameter-golf-{exp}-seed{seed}"
     repo_id = f"{args.repo}/{repo_name}"
 
     # Create repo if needed
     try:
-        api.create_repo(repo_id, exist_ok=True, private=False)
+        api.create_repo(repo_id, exist_ok=True, private=True)
     except Exception as e:
         print(f"Repo creation: {e}")
 
@@ -85,7 +85,7 @@ tags: [parameter-golf, language-model, compression]
 ---
 # {repo_name}
 
-Experiment: **{metrics.get('experiment', 'unknown')}** | Seed: {metrics.get('seed', 'N/A')}
+Experiment: **{metrics.get('experiment', 'unknown')}** | Seed: {metrics.get('seed', 'N/A')} | Uploaded: {ts}
 
 | Metric | Value |
 |--------|-------|
@@ -97,14 +97,16 @@ Experiment: **{metrics.get('experiment', 'unknown')}** | Seed: {metrics.get('see
 
 Download the zip bundle for all files.
 """
-    readme_path = model_path.parent / "README_hf.md"
-    readme_path.write_text(card)
+    import tempfile
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
+        f.write(card)
+        tmp_path = f.name
     api.upload_file(
-        path_or_fileobj=str(readme_path),
+        path_or_fileobj=tmp_path,
         path_in_repo="README.md",
-        repo_id=args.repo,
+        repo_id=repo_id,
     )
-    readme_path.unlink()
+    os.unlink(tmp_path)
 
     print(f"Done: https://huggingface.co/{repo_id}")
 

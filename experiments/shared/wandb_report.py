@@ -8,7 +8,7 @@ from pathlib import Path
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--metrics", required=True, help="Path to metrics JSON file")
-    parser.add_argument("--artifact", default=None, help="Path to model artifact (.ptz)")
+    parser.add_argument("--hf-repo", default=None, help="HF repo (e.g. Gayanukaa/parameter-golf-01_combined_all-seed1337)")
     parser.add_argument("--project", default="parameter-golf", help="W&B project name")
     parser.add_argument("--entity", default="gayanuka-lab")
     args = parser.parse_args()
@@ -24,14 +24,17 @@ def main():
     metrics = json.loads(Path(args.metrics).read_text())
     exp = metrics.get("experiment", "unknown")
     seed = metrics.get("seed", 0)
+    run_name = f"parameter-golf-{exp}-seed{seed}"
     ts = datetime.now().strftime("%Y%m%d-%H%M%S")
-    run_name = f"parameter-golf-{exp}-seed{seed}-{ts}"
 
     config = metrics.get("hyperparameters", {})
     config["experiment"] = exp
     config["seed"] = seed
+    config["uploaded_at"] = ts
     if "techniques" in metrics:
         config["techniques"] = ",".join(metrics["techniques"])
+    if args.hf_repo:
+        config["hf_model"] = f"https://huggingface.co/{args.hf_repo}"
 
     wandb.init(project=args.project, entity=args.entity, name=run_name, config=config)
 
@@ -45,11 +48,6 @@ def main():
         ] if k in metrics
     }
     wandb.log(log_data)
-
-    if args.artifact and Path(args.artifact).exists():
-        artifact = wandb.Artifact(f"{exp}-model", type="model")
-        artifact.add_file(args.artifact)
-        wandb.log_artifact(artifact)
 
     wandb.finish()
     print(f"Logged to W&B: {args.project}/{run_name}")
